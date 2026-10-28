@@ -23,7 +23,7 @@ If installing from a local checkout, use `bench get-app` with the repository URL
 
 ## Features
 
-- Set a report title icon (Frappe icon or sanitized inline SVG) and title color.
+- Set a report title icon (Frappe icon or sanitized inline SVG) and title color. Note: recommended to use [Lucide.dev](https://lucide.dev/icons/) svgs
 - Match summary card settings by the displayed card label; set an icon, border color, and description for each matching card.
 - Edit settings from a **Set Appearance** menu item on a supported report page. The item is available to users with the `Report Styler` or `System Manager` role.
 - Save appearance per report and apply updates to the current page without reloading it.
