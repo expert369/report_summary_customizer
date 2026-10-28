@@ -5,21 +5,21 @@
 		reportSummary: ".report-summary",
 		summaryCard: ".summary-item",
 		summaryLabel: ".summary-label",
-		cardContent: ".qgc-card-content",
-		cardIcon: ".qgc-summary-card-icon",
-		cardDescription: ".qgc-summary-description",
-		titleIcon: ".qgc-report-title-icon",
+		cardContent: ".rsa-card-content",
+		cardIcon: ".rsa-summary-card-icon",
+		cardDescription: ".rsa-summary-description",
+		titleIcon: ".rsa-report-title-icon",
 		menuItemParent: "li",
 	});
 
 	const CLASSES = Object.freeze({
-		styledCard: "qgc-card-styled",
-		cardContent: "qgc-card-content",
-		cardIcon: "qgc-summary-card-icon",
-		cardDescription: "qgc-summary-description",
-		titleIcon: "qgc-report-title-icon",
-		hiddenMenuItem: "qgc-menu-hidden",
-		activePage: "qgc-report-appearance-active",
+		styledCard: "rsa-card-styled",
+		cardContent: "rsa-card-content",
+		cardIcon: "rsa-summary-card-icon",
+		cardDescription: "rsa-summary-description",
+		titleIcon: "rsa-report-title-icon",
+		hiddenMenuItem: "rsa-menu-hidden",
+		activePage: "rsa-report-appearance-active",
 	});
 
 	const GET_APPEARANCE_METHOD =
@@ -104,8 +104,8 @@
 	const pendingAppearanceRequests = new Map();
 	let routeGeneration = 0;
 
-	if (frappe._qgcReportAppearanceInstalled) return;
-	frappe._qgcReportAppearanceInstalled = true;
+	if (frappe._rsaReportAppearanceInstalled) return;
+	frappe._rsaReportAppearanceInstalled = true;
 
 	function isCurrentReportRoute(reportName) {
 		const route = frappe.get_route();
@@ -139,7 +139,7 @@
 				description.remove()
 			);
 			card.classList.remove(CLASSES.styledCard);
-			card.style.removeProperty("--qgc-card-border");
+			card.style.removeProperty("--rsa-card-border");
 
 			const content = card.querySelector(SELECTORS.cardContent);
 			if (content?.parentElement === card) {
@@ -283,7 +283,7 @@
 
 	function applyAppearance(report, appearance) {
 		clearAppearance(report);
-		if (!report || report._qgcSummaryReportName !== report.report_name) {
+		if (!report || report._rsaSummaryReportName !== report.report_name) {
 			syncReportPageClass(report?.report_name, false);
 			return;
 		}
@@ -322,7 +322,7 @@
 
 			card.classList.add(CLASSES.styledCard);
 			if (isHexColor(style.border_color)) {
-				card.style.setProperty("--qgc-card-border", style.border_color);
+				card.style.setProperty("--rsa-card-border", style.border_color);
 			}
 
 			const content = ensureCardContent(card);
@@ -340,26 +340,26 @@
 	}
 
 	function installSummaryObserver(report) {
-		if (report._qgcSummaryObserverInstalled) return;
+		if (report._rsaSummaryObserverInstalled) return;
 
 		const summary = report.$summary?.get(0);
 		if (!summary) return;
 
 		const observer = new MutationObserver(() => {
 			if (
-				report._qgcSummaryReportName === report.report_name &&
+				report._rsaSummaryReportName === report.report_name &&
 				isCurrentReportRoute(report.report_name)
 			) {
 				applyAppearance(report, appearanceCache.get(report.report_name) || {});
 			}
 		});
 		observer.observe(summary, { childList: true });
-		report._qgcSummaryObserver = observer;
-		report._qgcSummaryObserverInstalled = true;
+		report._rsaSummaryObserver = observer;
+		report._rsaSummaryObserverInstalled = true;
 	}
 
 	function installSummaryRenderer(report) {
-		if (report._qgcReportAppearanceRendererInstalled) return;
+		if (report._rsaReportAppearanceRendererInstalled) return;
 
 		const originalRenderSummary = report.render_summary;
 		if (typeof originalRenderSummary !== "function") return;
@@ -367,9 +367,9 @@
 		report.render_summary = function (...args) {
 			const result = originalRenderSummary.apply(this, args);
 			if (isCurrentReportRoute(this.report_name)) {
-				this._qgcSummaryReportName =
+				this._rsaSummaryReportName =
 					Array.isArray(args[0]) && args[0].length ? this.report_name : null;
-				if (this._qgcSummaryReportName) {
+				if (this._rsaSummaryReportName) {
 					addAppearanceMenuItem(this.page);
 					installSummaryObserver(this);
 				} else {
@@ -380,7 +380,7 @@
 			}
 			return result;
 		};
-		report._qgcReportAppearanceRendererInstalled = true;
+		report._rsaReportAppearanceRendererInstalled = true;
 	}
 
 	function fetchAppearance(reportName) {
@@ -415,7 +415,7 @@
 	}
 
 	function setMenuItemVisibility(page, visible) {
-		page?._qgcReportAppearanceMenuItem
+		page?._rsaReportAppearanceMenuItem
 			?.closest(SELECTORS.menuItemParent)
 			.toggleClass(CLASSES.hiddenMenuItem, !visible);
 	}
@@ -426,9 +426,9 @@
 			return;
 		}
 
-		const menuItem = page._qgcReportAppearanceMenuItem;
+		const menuItem = page._rsaReportAppearanceMenuItem;
 		if (!menuItem || !menuItem.closest(SELECTORS.menuItemParent).get(0)?.isConnected) {
-			page._qgcReportAppearanceMenuItem = page.add_menu_item(
+			page._rsaReportAppearanceMenuItem = page.add_menu_item(
 				__("Set Appearance"),
 				() => openAppearanceDialog(),
 				false,
@@ -479,8 +479,8 @@
 		const targetReportName = route[0] === "query-report" ? route[1] : null;
 		const previousReport = frappe.query_report;
 		clearAppearance(previousReport);
-		if (previousReport && previousReport._qgcSummaryReportName !== targetReportName) {
-			previousReport._qgcSummaryReportName = null;
+		if (previousReport && previousReport._rsaSummaryReportName !== targetReportName) {
+			previousReport._rsaSummaryReportName = null;
 			previousReport.$summary?.empty();
 		}
 		syncReportPageClass(targetReportName, false);
@@ -494,12 +494,12 @@
 
 		installSummaryRenderer(report);
 		if (
-			report._qgcSummaryReportName !== reportName &&
+			report._rsaSummaryReportName !== reportName &&
 			readDisplayedCardLabels(report).length
 		) {
-			report._qgcSummaryReportName = reportName;
+			report._rsaSummaryReportName = reportName;
 		}
-		if (report._qgcSummaryReportName === reportName) {
+		if (report._rsaSummaryReportName === reportName) {
 			addAppearanceMenuItem(report.page);
 			installSummaryObserver(report);
 		} else {
@@ -540,7 +540,7 @@
 		if (
 			!reportName ||
 			!isCurrentReportRoute(reportName) ||
-			report._qgcSummaryReportName !== reportName ||
+			report._rsaSummaryReportName !== reportName ||
 			!canSetAppearance()
 		) {
 			return;
@@ -556,7 +556,7 @@
 			const fields = [
 				{
 					fieldtype: "Section Break",
-					fieldname: "qgc_report_appearance_section",
+					fieldname: "rsa_report_appearance_section",
 					label: __("Report Appearance"),
 				},
 				{
@@ -574,7 +574,7 @@
 					),
 					default: appearance.icon_svg || "",
 				},
-				{ fieldtype: "Column Break", fieldname: "qgc_report_color_column" },
+				{ fieldtype: "Column Break", fieldname: "rsa_report_color_column" },
 				{
 					fieldtype: "Color",
 					fieldname: "title_color",
@@ -588,34 +588,34 @@
 				fields.push(
 					{
 						fieldtype: "Section Break",
-						fieldname: `qgc_card_section_${index}`,
+						fieldname: `rsa_card_section_${index}`,
 						label: card.label,
 					},
 					{
 						fieldtype: "Small Text",
-						fieldname: `qgc_card_description_${index}`,
+						fieldname: `rsa_card_description_${index}`,
 						label: __("Description"),
 						default: saved.description || "",
 					},
 					{
 						fieldtype: "Icon",
-						fieldname: `qgc_card_icon_${index}`,
+						fieldname: `rsa_card_icon_${index}`,
 						label: __("Icon"),
 						default: saved.icon || "",
 					},
 					{
 						fieldtype: "Small Text",
-						fieldname: `qgc_card_icon_svg_${index}`,
+						fieldname: `rsa_card_icon_svg_${index}`,
 						label: __("Custom SVG Icon"),
 						description: __(
 							"Paste the complete inline SVG markup copied from Lucide. It appears in this summary card."
 						),
 						default: saved.icon_svg || "",
 					},
-					{ fieldtype: "Column Break", fieldname: `qgc_card_color_column_${index}` },
+					{ fieldtype: "Column Break", fieldname: `rsa_card_color_column_${index}` },
 					{
 						fieldtype: "Color",
-						fieldname: `qgc_card_border_${index}`,
+						fieldname: `rsa_card_border_${index}`,
 						label: __("Border Color"),
 						default: expandColorForControl(saved.border_color),
 					}
@@ -636,10 +636,10 @@
 						),
 						...displayedCards.map((card, index) => ({
 							card_label: card.label,
-							icon: values[`qgc_card_icon_${index}`] || "",
-							icon_svg: values[`qgc_card_icon_svg_${index}`] || "",
-							border_color: values[`qgc_card_border_${index}`] || "",
-							description: values[`qgc_card_description_${index}`] || "",
+							icon: values[`rsa_card_icon_${index}`] || "",
+							icon_svg: values[`rsa_card_icon_svg_${index}`] || "",
+							border_color: values[`rsa_card_border_${index}`] || "",
+							description: values[`rsa_card_description_${index}`] || "",
 						})),
 					];
 
@@ -678,6 +678,6 @@
 	}
 
 	frappe.router.on("change", handleRouteChange);
-	$(document).on("page-change.qgcReportAppearance", handleRouteChange);
+	$(document).on("page-change.rsaReportAppearance", handleRouteChange);
 	$(document).ready(handleRouteChange);
 })();

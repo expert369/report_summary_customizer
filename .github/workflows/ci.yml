@@ -47,12 +47,12 @@ jobs:
         id: detect-tests
         working-directory: ${{ github.workspace }}
         run: |
-          if rg -n '^\s*def test_' qgc_erp --glob 'test_*.py' > /dev/null; then
+          if rg -n '^\s*def test_' report_summary_customizer --glob 'test_*.py' > /dev/null; then
             echo "has_tests=true" >> "$GITHUB_OUTPUT"
             echo "Runnable app tests found."
           else
             echo "has_tests=false" >> "$GITHUB_OUTPUT"
-            echo "No runnable app tests found in qgc_erp; test step will be skipped."
+            echo "No runnable app tests found in report_summary_customizer; test step will be skipped."
           fi
 
       - name: Setup Python

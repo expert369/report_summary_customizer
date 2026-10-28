@@ -307,12 +307,12 @@ class TestReportAppearance(FrappeTestCase):
 			icon="small-up",
 			cards=json.dumps([{"card_label": "Total", "description": "Net total"}]),
 		)
-		custom_field_name = f"User-custom_qgc_uninstall_{uuid4().hex[:8]}"
+		custom_field_name = f"User-custom_rsa_uninstall_{uuid4().hex[:8]}"
 		frappe.get_doc(
 			{
 				"doctype": "Custom Field",
 				"dt": "User",
-				"label": "QGC Uninstall Test",
+				"label": "rsa Uninstall Test",
 				"fieldname": custom_field_name.split("-", 1)[1],
 				"fieldtype": "Data",
 				"module": APP_MODULE,
