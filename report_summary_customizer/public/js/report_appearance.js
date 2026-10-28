@@ -26,6 +26,80 @@
 		"report_summary_customizer.api.report_appearance.get_report_appearance";
 	const SET_APPEARANCE_METHOD =
 		"report_summary_customizer.api.report_appearance.set_report_appearance";
+	const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+	const SVG_ELEMENTS = new Set([
+		"svg",
+		"g",
+		"path",
+		"circle",
+		"ellipse",
+		"line",
+		"polyline",
+		"polygon",
+		"rect",
+	]);
+	const SVG_ROOT_ATTRIBUTES = new Set([
+		"width",
+		"height",
+		"viewBox",
+		"fill",
+		"stroke",
+		"stroke-width",
+		"stroke-linecap",
+		"stroke-linejoin",
+		"stroke-dasharray",
+		"stroke-dashoffset",
+		"fill-rule",
+		"clip-rule",
+		"opacity",
+	]);
+	const SVG_GEOMETRY_ATTRIBUTES = new Set([
+		"d",
+		"cx",
+		"cy",
+		"r",
+		"rx",
+		"ry",
+		"x",
+		"y",
+		"x1",
+		"y1",
+		"x2",
+		"y2",
+		"width",
+		"height",
+		"points",
+		"fill",
+		"stroke",
+		"stroke-width",
+		"stroke-linecap",
+		"stroke-linejoin",
+		"stroke-dasharray",
+		"stroke-dashoffset",
+		"stroke-miterlimit",
+		"fill-rule",
+		"clip-rule",
+		"opacity",
+		"fill-opacity",
+		"stroke-opacity",
+		"transform",
+	]);
+	const SVG_GROUP_ATTRIBUTES = new Set([
+		"fill",
+		"stroke",
+		"stroke-width",
+		"stroke-linecap",
+		"stroke-linejoin",
+		"stroke-dasharray",
+		"stroke-dashoffset",
+		"stroke-miterlimit",
+		"fill-rule",
+		"clip-rule",
+		"opacity",
+		"fill-opacity",
+		"stroke-opacity",
+		"transform",
+	]);
 	const appearanceCache = new Map();
 	const pendingAppearanceRequests = new Map();
 	let routeGeneration = 0;
@@ -89,6 +163,86 @@
 		return icon;
 	}
 
+	function makeSvgIcon(markup, className) {
+		if (typeof markup !== "string" || !markup.trim() || markup.length > 50000) return null;
+		if (/<!\s*(?:DOCTYPE|ENTITY)/i.test(markup)) return null;
+
+		let source;
+		try {
+			source = new DOMParser().parseFromString(markup, "image/svg+xml").documentElement;
+		} catch {
+			return null;
+		}
+		if (
+			!source ||
+			source.localName?.toLowerCase() !== "svg" ||
+			(source.namespaceURI && source.namespaceURI !== SVG_NAMESPACE)
+		) {
+			return null;
+		}
+
+		let nodeCount = 0;
+		let hasGeometry = false;
+		let invalid = false;
+		const cloneTree = (element, isRoot = false, depth = 0) => {
+			nodeCount += 1;
+			const tagName = element.localName?.toLowerCase();
+			if (
+				nodeCount > 500 ||
+				depth > 20 ||
+				!SVG_ELEMENTS.has(tagName) ||
+				(!isRoot && tagName === "svg") ||
+				(element.namespaceURI && element.namespaceURI !== SVG_NAMESPACE)
+			) {
+				invalid = true;
+				return null;
+			}
+			if (
+				["path", "circle", "ellipse", "line", "polyline", "polygon", "rect"].includes(
+					tagName
+				)
+			) {
+				hasGeometry = true;
+			}
+			if (!isRoot && tagName !== "g" && element.children.length) {
+				invalid = true;
+				return null;
+			}
+
+			const clone = document.createElementNS(SVG_NAMESPACE, tagName);
+			const allowedAttributes = isRoot
+				? SVG_ROOT_ATTRIBUTES
+				: tagName === "g"
+				? SVG_GROUP_ATTRIBUTES
+				: SVG_GEOMETRY_ATTRIBUTES;
+			for (const attribute of Array.from(element.attributes || [])) {
+				const name = attribute.localName;
+				const value = attribute.value.trim();
+				if (attribute.namespaceURI || !allowedAttributes.has(name)) continue;
+				if (!value || value.length > 20000 || /url\s*\(|javascript:/i.test(value)) {
+					invalid = true;
+					return null;
+				}
+				clone.setAttribute(name, value);
+			}
+			for (const child of Array.from(element.childNodes || [])) {
+				if (child.nodeType === Node.TEXT_NODE) {
+					if (child.textContent.trim()) invalid = true;
+					continue;
+				}
+				if (child.nodeType !== Node.ELEMENT_NODE) continue;
+				const childClone = cloneTree(child, false, depth + 1);
+				if (childClone) clone.appendChild(childClone);
+			}
+			return clone;
+		};
+
+		const icon = cloneTree(source, true);
+		if (!icon || invalid || !hasGeometry) return null;
+		icon.classList.add(className);
+		return icon;
+	}
+
 	function ensureCardContent(card) {
 		let content = card.querySelector(SELECTORS.cardContent);
 		if (content?.parentElement === card) return content;
@@ -144,7 +298,9 @@
 				title.style.setProperty("color", appearance.color);
 			}
 
-			const titleIcon = makeIcon(appearance.icon, CLASSES.titleIcon, "md");
+			const titleIcon =
+				makeSvgIcon(appearance.icon_svg, CLASSES.titleIcon) ||
+				makeIcon(appearance.icon, CLASSES.titleIcon, "md");
 			if (titleIcon) title.prepend(titleIcon);
 		}
 
@@ -158,7 +314,11 @@
 			const label = card.querySelector(SELECTORS.summaryLabel)?.textContent.trim();
 			// Labels are matched as displayed, so translated labels remain language-specific.
 			const style = cardStyles.get(label);
-			if (!style || (!style.icon && !style.border_color && !style.description)) return;
+			if (
+				!style ||
+				(!style.icon && !style.icon_svg && !style.border_color && !style.description)
+			)
+				return;
 
 			card.classList.add(CLASSES.styledCard);
 			if (isHexColor(style.border_color)) {
@@ -166,7 +326,9 @@
 			}
 
 			const content = ensureCardContent(card);
-			const cardIcon = makeIcon(style.icon, CLASSES.cardIcon, "md");
+			const cardIcon =
+				makeSvgIcon(style.icon_svg, CLASSES.cardIcon) ||
+				makeIcon(style.icon, CLASSES.cardIcon, "md");
 			if (cardIcon) card.insertBefore(cardIcon, content);
 			setCardDescription(content, style.description);
 		});
@@ -403,6 +565,15 @@
 					label: __("Report Icon"),
 					default: appearance.icon || "",
 				},
+				{
+					fieldtype: "Small Text",
+					fieldname: "report_icon_svg",
+					label: __("Custom SVG Icon"),
+					description: __(
+						"Paste the complete inline SVG markup copied from Lucide. It appears beside the report title."
+					),
+					default: appearance.icon_svg || "",
+				},
 				{ fieldtype: "Column Break", fieldname: "qgc_report_color_column" },
 				{
 					fieldtype: "Color",
@@ -432,6 +603,15 @@
 						label: __("Icon"),
 						default: saved.icon || "",
 					},
+					{
+						fieldtype: "Small Text",
+						fieldname: `qgc_card_icon_svg_${index}`,
+						label: __("Custom SVG Icon"),
+						description: __(
+							"Paste the complete inline SVG markup copied from Lucide. It appears in this summary card."
+						),
+						default: saved.icon_svg || "",
+					},
 					{ fieldtype: "Column Break", fieldname: `qgc_card_color_column_${index}` },
 					{
 						fieldtype: "Color",
@@ -457,6 +637,7 @@
 						...displayedCards.map((card, index) => ({
 							card_label: card.label,
 							icon: values[`qgc_card_icon_${index}`] || "",
+							icon_svg: values[`qgc_card_icon_svg_${index}`] || "",
 							border_color: values[`qgc_card_border_${index}`] || "",
 							description: values[`qgc_card_description_${index}`] || "",
 						})),
@@ -469,6 +650,7 @@
 							args: {
 								report: reportName,
 								icon: values.report_icon || "",
+								icon_svg: values.report_icon_svg || "",
 								color: values.title_color || "",
 								cards: JSON.stringify(cards),
 							},

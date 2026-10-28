@@ -4,6 +4,8 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 
+from report_summary_customizer.svg import sanitize_svg
+
 HEX_COLOR_PATTERN = re.compile(r"^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$")
 SUPPORTED_REPORT_TYPES = {"Script Report", "Query Report", "Custom Report"}
 
@@ -16,6 +18,7 @@ class ReportAppearance(Document):
 		self.validate_report()
 		self.validate_immutable_report()
 		self.validate_colors()
+		self.validate_icons()
 		self.validate_unique_card_labels()
 
 	def validate_report(self) -> None:
@@ -61,3 +64,9 @@ class ReportAppearance(Document):
 			if label in seen_labels:
 				frappe.throw(_("Summary card label {0} is repeated.").format(label), frappe.ValidationError)
 			seen_labels.add(label)
+
+	def validate_icons(self) -> None:
+		"""Sanitize report and card SVG markup before saving it."""
+		self.icon_svg = sanitize_svg(self.icon_svg, _("Report SVG Icon"))
+		for card in self.cards or []:
+			card.icon_svg = sanitize_svg(card.icon_svg, _("Card SVG Icon"))

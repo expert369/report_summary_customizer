@@ -6,25 +6,28 @@ from typing import Any
 import frappe
 from frappe import _
 
+from report_summary_customizer.svg import sanitize_svg
+
 
 @frappe.whitelist(methods=["GET"])
 def get_report_appearance(report: str) -> dict[str, Any]:
 	"""Return saved appearance settings for a report, or an empty dict."""
 	_ensure_logged_in()
 
-	appearance = frappe.db.get_value("Report Appearance", report, ["icon", "color"], as_dict=True)
+	appearance = frappe.db.get_value("Report Appearance", report, ["icon", "icon_svg", "color"], as_dict=True)
 	if not appearance:
 		return {}
 
 	cards = frappe.get_all(
 		"Report Appearance Card",
 		filters={"parent": report, "parenttype": "Report Appearance", "parentfield": "cards"},
-		fields=["card_label", "icon", "border_color", "description"],
+		fields=["card_label", "icon", "icon_svg", "border_color", "description"],
 		order_by="idx asc",
 	)
 	return {
 		"configured": True,
 		"icon": appearance.icon,
+		"icon_svg": appearance.icon_svg,
 		"color": appearance.color,
 		"cards": cards,
 	}
@@ -36,16 +39,18 @@ def set_report_appearance(
 	icon: str | None = None,
 	color: str | None = None,
 	cards: str | None = None,
+	icon_svg: str | None = None,
 ) -> dict[str, Any]:
 	"""Create, replace, or reset settings for a report with a summary view."""
 	_ensure_can_style()
 	_validate_supported_report(report)
 
 	clean_icon = _clean_optional_text(icon, "Report Icon")
+	clean_icon_svg = sanitize_svg(icon_svg, _("Report SVG Icon"))
 	clean_color = _clean_optional_text(color, "Title Color")
 	clean_cards = _parse_card_rows(cards)
 
-	if not clean_icon and not clean_color and not clean_cards:
+	if not clean_icon and not clean_icon_svg and not clean_color and not clean_cards:
 		if frappe.db.exists("Report Appearance", report):
 			frappe.delete_doc("Report Appearance", report, ignore_permissions=True)
 		return {}
@@ -57,6 +62,7 @@ def set_report_appearance(
 
 	appearance.report = report
 	appearance.icon = clean_icon
+	appearance.icon_svg = clean_icon_svg
 	appearance.color = clean_color
 	appearance.set("cards", [])
 	for card in clean_cards:
@@ -123,9 +129,10 @@ def _parse_card_rows(cards: str | None) -> list[dict[str, str | None]]:
 
 		label = _clean_optional_text(row.get("card_label"), "Card Label")
 		icon = _clean_optional_text(row.get("icon"), "Card Icon")
+		icon_svg = sanitize_svg(row.get("icon_svg"), _("Card SVG Icon"))
 		border_color = _clean_optional_text(row.get("border_color"), "Border Color")
 		description = _clean_optional_text(row.get("description"), "Card Description")
-		if not icon and not border_color and not description:
+		if not icon and not icon_svg and not border_color and not description:
 			continue
 		if not label:
 			frappe.throw(_("A styled summary card requires a label."), frappe.ValidationError)
@@ -133,6 +140,7 @@ def _parse_card_rows(cards: str | None) -> list[dict[str, str | None]]:
 			{
 				"card_label": label,
 				"icon": icon,
+				"icon_svg": icon_svg,
 				"border_color": border_color,
 				"description": description,
 			}

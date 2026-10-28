@@ -6,6 +6,7 @@
  "field_order": [
   "card_label",
   "icon",
+  "icon_svg",
   "border_color",
   "description"
  ],
@@ -21,6 +22,15 @@
    "fieldname": "icon",
    "fieldtype": "Icon",
    "label": "Icon"
+  },
+  {
+   "fieldname": "icon_svg",
+   "fieldtype": "Code",
+   "label": "Custom SVG Icon",
+   "options": "HTML",
+   "max_height": 160,
+   "max_lines": 8,
+   "description": "Paste the complete inline SVG markup copied from Lucide. This icon appears in this summary card."
   },
   {
    "fieldname": "border_color",

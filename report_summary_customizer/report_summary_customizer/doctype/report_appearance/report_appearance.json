@@ -7,6 +7,7 @@
   "report",
   "appearance_section",
   "icon",
+  "icon_svg",
   "color",
   "cards"
  ],
@@ -30,6 +31,15 @@
    "fieldname": "icon",
    "fieldtype": "Icon",
    "label": "Report Icon"
+  },
+  {
+   "fieldname": "icon_svg",
+   "fieldtype": "Code",
+   "label": "Custom SVG Icon",
+   "options": "HTML",
+   "max_height": 160,
+   "max_lines": 8,
+   "description": "Paste the complete inline SVG markup copied from Lucide. This icon appears beside the report title."
   },
   {
    "fieldname": "color",
