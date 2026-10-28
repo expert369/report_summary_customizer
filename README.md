@@ -32,6 +32,9 @@ If installing from a local checkout, use `bench get-app` with the repository URL
 
 The app changes presentation only; it does not create reports, change report queries, or generate summary values. Summary card labels are matched as displayed, so labels that differ by translation or report filters need corresponding settings.
 
+You can set appearance from Menu -> Set Appearance:
+<img width="1900" height="687" alt="image" src="https://github.com/user-attachments/assets/ceacf381-9057-4c94-85be-b4f2a9abf7cf" />
+
 Default Appearance
 <img width="1581" height="820" alt="image" src="https://github.com/user-attachments/assets/2b4dd4d2-6f68-4784-a655-914f7f1aab3b" />
 
