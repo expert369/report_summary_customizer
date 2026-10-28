@@ -29,6 +29,14 @@ Restart the Bench's web and worker processes using the process manager for that 
 
 The app changes presentation only; it does not create reports, change report queries, or generate summary values. Summary card labels are matched as displayed, so labels that differ by translation or report filters need corresponding settings.
 
+Default Appearance
+<img width="1897" height="648" alt="image" src="https://github.com/user-attachments/assets/81e49ab7-afe8-42d7-ae96-4f60c0b6586a" />
+
+
+After applying Appearance
+<img width="1908" height="674" alt="image" src="https://github.com/user-attachments/assets/7d063b96-6e46-4b35-8d17-7a8f9c79daec" />
+
+
 ## How it works
 
 1. `hooks.py` includes the app's CSS and JavaScript in the Frappe Desk. The assets listen for Desk route changes and act only on the `query-report` route.
