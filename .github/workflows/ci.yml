@@ -4,11 +4,11 @@ name: CI
 on:
   push:
     branches:
-      - develop
+      - develop-16
   pull_request:
     branches:
-      - developer
-      - version-15
+      - develop-16
+      - version-16
 
 concurrency:
   # PR: one group per PR number. Push: one group per branch (latest push wins).
@@ -63,7 +63,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
-          node-version: 21
+          node-version: 24
           check-latest: true
 
       - name: Cache pip
@@ -93,7 +93,7 @@ jobs:
       - name: Setup
         run: |
           pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --frappe-branch version-15 --python "$(which python)" /home/runner/frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch version-16 --python "$(which python)" /home/runner/frappe-bench
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
 
@@ -101,12 +101,10 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench get-app report_summary_customizer $GITHUB_WORKSPACE
-          bench get-app https://github.com/frappe/erpnext --branch version-15
-          bench get-app https://github.com/frappe/hrms --branch version-15
+          bench get-app https://github.com/frappe/erpnext --branch version-16
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
           bench --site test_site install-app erpnext
-          bench --site test_site install-app hrms
           bench --site test_site install-app report_summary_customizer
           bench build
         env:

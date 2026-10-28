@@ -20,12 +20,14 @@
 		titleIcon: "rsa-report-title-icon",
 		hiddenMenuItem: "rsa-menu-hidden",
 		activePage: "rsa-report-appearance-active",
+		activeSummary: "rsa-report-summary-active",
 	});
 
 	const GET_APPEARANCE_METHOD =
 		"report_summary_customizer.api.report_appearance.get_report_appearance";
 	const SET_APPEARANCE_METHOD =
 		"report_summary_customizer.api.report_appearance.set_report_appearance";
+	const SUPPORTED_REPORT_TYPES = new Set(["Script Report", "Query Report", "Custom Report"]);
 	const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 	const SVG_ELEMENTS = new Set([
 		"svg",
@@ -103,6 +105,7 @@
 	const appearanceCache = new Map();
 	const pendingAppearanceRequests = new Map();
 	let routeGeneration = 0;
+	let lastHandledRoute = null;
 
 	if (frappe._rsaReportAppearanceInstalled) return;
 	frappe._rsaReportAppearanceInstalled = true;
@@ -121,10 +124,23 @@
 		);
 	}
 
+	function supportsAppearance(report) {
+		return SUPPORTED_REPORT_TYPES.has(report?.report_doc?.report_type);
+	}
+
+	function getReportTitleElement(report) {
+		const titleArea = report?.page?.$title_area;
+		return (
+			titleArea?.find(SELECTORS.titleText)?.get(0) ||
+			titleArea?.find(".navbar-breadcrumbs li:last-child a")?.get(0) ||
+			null
+		);
+	}
+
 	function clearAppearance(report) {
 		if (!report) return;
 
-		const title = report.page?.$title_area?.find(SELECTORS.titleText)?.get(0);
+		const title = getReportTitleElement(report);
 		if (title) {
 			title.querySelectorAll(SELECTORS.titleIcon).forEach((icon) => icon.remove());
 			title.style.removeProperty("color");
@@ -132,6 +148,7 @@
 
 		const summary = report.$summary?.get(0);
 		if (!summary) return;
+		summary.classList.remove(CLASSES.activeSummary);
 
 		summary.querySelectorAll(SELECTORS.summaryCard).forEach((card) => {
 			card.querySelectorAll(SELECTORS.cardIcon).forEach((icon) => icon.remove());
@@ -217,11 +234,16 @@
 				: SVG_GEOMETRY_ATTRIBUTES;
 			for (const attribute of Array.from(element.attributes || [])) {
 				const name = attribute.localName;
-				const value = attribute.value.trim();
+				let value = attribute.value.trim();
 				if (attribute.namespaceURI || !allowedAttributes.has(name)) continue;
 				if (!value || value.length > 20000 || /url\s*\(|javascript:/i.test(value)) {
 					invalid = true;
 					return null;
+				}
+				// Keep inline SVG paint tied to CSS currentColor so custom icons remain
+				// visible when Frappe switches between light and dark themes.
+				if (["fill", "stroke"].includes(name) && !/^(none|transparent)$/i.test(value)) {
+					value = "currentColor";
 				}
 				clone.setAttribute(name, value);
 			}
@@ -272,67 +294,85 @@
 	}
 
 	function syncReportPageClass(reportName, active) {
-		const page = document.querySelector(SELECTORS.reportPage);
-		if (!page) return;
-
-		page.classList.toggle(
-			CLASSES.activePage,
-			Boolean(active && isCurrentReportRoute(reportName))
+		const report = frappe.query_report;
+		const summary = report?.$summary?.get(0);
+		const shouldActivate = Boolean(
+			active &&
+				report?.report_name === reportName &&
+				isCurrentReportRoute(reportName) &&
+				summary
 		);
+		document.querySelectorAll(SELECTORS.reportPage).forEach((page) => {
+			page.classList.toggle(CLASSES.activePage, shouldActivate && page.contains(summary));
+		});
 	}
 
 	function applyAppearance(report, appearance) {
-		clearAppearance(report);
-		if (!report || report._rsaSummaryReportName !== report.report_name) {
-			syncReportPageClass(report?.report_name, false);
-			return;
-		}
-		if (!appearance?.configured) {
-			syncReportPageClass(report.report_name, false);
-			return;
-		}
-
-		const title = report.page?.$title_area?.find(SELECTORS.titleText)?.get(0);
-		if (title) {
-			if (isHexColor(appearance.color)) {
-				title.style.setProperty("color", appearance.color);
-			}
-
-			const titleIcon =
-				makeSvgIcon(appearance.icon_svg, CLASSES.titleIcon) ||
-				makeIcon(appearance.icon, CLASSES.titleIcon, "md");
-			if (titleIcon) title.prepend(titleIcon);
-		}
+		if (!report) return;
 
 		const summary = report.$summary?.get(0);
-		if (!summary) return;
-
-		const cardStyles = new Map(
-			(appearance.cards || []).map((card) => [card.card_label, card])
-		);
-		summary.querySelectorAll(SELECTORS.summaryCard).forEach((card) => {
-			const label = card.querySelector(SELECTORS.summaryLabel)?.textContent.trim();
-			// Labels are matched as displayed, so translated labels remain language-specific.
-			const style = cardStyles.get(label);
-			if (
-				!style ||
-				(!style.icon && !style.icon_svg && !style.border_color && !style.description)
-			)
+		const observer = report._rsaSummaryObserver;
+		observer?.disconnect();
+		try {
+			clearAppearance(report);
+			if (!isCurrentReportRoute(report.report_name)) {
+				syncReportPageClass(report.report_name, false);
 				return;
-
-			card.classList.add(CLASSES.styledCard);
-			if (isHexColor(style.border_color)) {
-				card.style.setProperty("--rsa-card-border", style.border_color);
+			}
+			if (!appearance?.configured) {
+				syncReportPageClass(report.report_name, false);
+				return;
 			}
 
-			const content = ensureCardContent(card);
-			const cardIcon =
-				makeSvgIcon(style.icon_svg, CLASSES.cardIcon) ||
-				makeIcon(style.icon, CLASSES.cardIcon, "md");
-			if (cardIcon) card.insertBefore(cardIcon, content);
-			setCardDescription(content, style.description);
-		});
-		syncReportPageClass(report.report_name, true);
+			const title = getReportTitleElement(report);
+			if (title) {
+				if (isHexColor(appearance.color)) {
+					title.style.setProperty("color", appearance.color, "important");
+				}
+
+				const titleIcon =
+					makeSvgIcon(appearance.icon_svg, CLASSES.titleIcon) ||
+					makeIcon(appearance.icon, CLASSES.titleIcon, "md");
+				if (titleIcon) title.prepend(titleIcon);
+			}
+
+			if (!summary) {
+				syncReportPageClass(report.report_name, true);
+				return;
+			}
+			summary.classList.add(CLASSES.activeSummary);
+
+			const cardStyles = new Map(
+				(appearance.cards || []).map((card) => [card.card_label, card])
+			);
+			summary.querySelectorAll(SELECTORS.summaryCard).forEach((card) => {
+				const label = card.querySelector(SELECTORS.summaryLabel)?.textContent.trim();
+				// Labels are matched as displayed, so translated labels remain language-specific.
+				const style = cardStyles.get(label);
+				if (
+					!style ||
+					(!style.icon && !style.icon_svg && !style.border_color && !style.description)
+				)
+					return;
+
+				card.classList.add(CLASSES.styledCard);
+				if (isHexColor(style.border_color)) {
+					card.style.setProperty("--rsa-card-border", style.border_color);
+				}
+
+				const content = ensureCardContent(card);
+				const cardIcon =
+					makeSvgIcon(style.icon_svg, CLASSES.cardIcon) ||
+					makeIcon(style.icon, CLASSES.cardIcon, "md");
+				if (cardIcon) card.insertBefore(cardIcon, content);
+				setCardDescription(content, style.description);
+			});
+			syncReportPageClass(report.report_name, true);
+		} finally {
+			if (observer && summary) {
+				observer.observe(summary, { childList: true });
+			}
+		}
 	}
 
 	function isHexColor(value) {
@@ -369,13 +409,8 @@
 			if (isCurrentReportRoute(this.report_name)) {
 				this._rsaSummaryReportName =
 					Array.isArray(args[0]) && args[0].length ? this.report_name : null;
-				if (this._rsaSummaryReportName) {
-					addAppearanceMenuItem(this.page);
-					installSummaryObserver(this);
-				} else {
-					setMenuItemVisibility(this.page, false);
-					syncReportPageClass(this.report_name, false);
-				}
+				addAppearanceMenuItem(this.page, this);
+				installSummaryObserver(this);
 				applyAppearance(this, appearanceCache.get(this.report_name) || {});
 			}
 			return result;
@@ -400,12 +435,16 @@
 			.then(
 				(response) => {
 					const appearance = response.message || {};
+					if (pendingAppearanceRequests.get(reportName) !== request) return appearance;
+
 					appearanceCache.set(reportName, appearance);
 					pendingAppearanceRequests.delete(reportName);
 					return appearance;
 				},
 				(error) => {
-					pendingAppearanceRequests.delete(reportName);
+					if (pendingAppearanceRequests.get(reportName) === request) {
+						pendingAppearanceRequests.delete(reportName);
+					}
 					console.warn("Could not load report appearance", error);
 					return {};
 				}
@@ -420,8 +459,8 @@
 			.toggleClass(CLASSES.hiddenMenuItem, !visible);
 	}
 
-	function addAppearanceMenuItem(page) {
-		if (!page || !canSetAppearance()) {
+	function addAppearanceMenuItem(page, report) {
+		if (!page || !canSetAppearance() || !supportsAppearance(report)) {
 			setMenuItemVisibility(page, false);
 			return;
 		}
@@ -449,15 +488,10 @@
 				}
 
 				const report = frappe.query_report;
-				const title = report?.page?.$title_area?.find(SELECTORS.titleText);
-				const expectedTitle = (report?.page_title || __(reportName)).trim();
 				const pageReady =
 					report?.report_name === reportName &&
-					report.report_doc &&
 					report.page?.main?.length &&
-					report.$summary?.length &&
-					title?.length &&
-					title.text().trim() === expectedTitle;
+					report.$summary?.length;
 
 				if (pageReady) {
 					resolve(report);
@@ -474,8 +508,12 @@
 	}
 
 	async function handleRouteChange() {
-		const generation = ++routeGeneration;
 		const route = frappe.get_route();
+		const routeKey = route.join("/");
+		if (routeKey === lastHandledRoute) return;
+		lastHandledRoute = routeKey;
+
+		const generation = ++routeGeneration;
 		const targetReportName = route[0] === "query-report" ? route[1] : null;
 		const previousReport = frappe.query_report;
 		clearAppearance(previousReport);
@@ -486,34 +524,38 @@
 		syncReportPageClass(targetReportName, false);
 		setMenuItemVisibility(previousReport?.page, false);
 
-		if (route[0] !== "query-report" || !route[1]) return;
+		if (
+			route[0] !== "query-report" ||
+			!route[1] ||
+			["undefined", "null"].includes(String(route[1]).toLowerCase())
+		)
+			return;
 
 		const reportName = route[1];
+		// A user can create or edit the DocType record outside this page. Discard an
+		// earlier empty response when returning to the report so the saved style loads.
+		appearanceCache.delete(reportName);
+		pendingAppearanceRequests.delete(reportName);
+		// Start loading the saved settings immediately. Page initialization can lag
+		// behind the router event, especially when the report is opened from a form.
+		const appearancePromise = fetchAppearance(reportName);
 		const report = await waitForReportPage(reportName);
 		if (!report || generation !== routeGeneration || !isCurrentReportRoute(reportName)) return;
 
 		installSummaryRenderer(report);
-		if (
-			report._rsaSummaryReportName !== reportName &&
-			readDisplayedCardLabels(report).length
-		) {
+		if (readDisplayedCardLabels(report).length) {
 			report._rsaSummaryReportName = reportName;
 		}
-		if (report._rsaSummaryReportName === reportName) {
-			addAppearanceMenuItem(report.page);
-			installSummaryObserver(report);
-		} else {
-			setMenuItemVisibility(report.page, false);
-			syncReportPageClass(reportName, false);
-		}
+		addAppearanceMenuItem(report.page, report);
+		installSummaryObserver(report);
 
-		const appearance = await fetchAppearance(reportName);
+		const appearance = await appearancePromise;
 		if (
 			generation === routeGeneration &&
 			isCurrentReportRoute(reportName) &&
-			frappe.query_report === report
+			frappe.query_report?.report_name === reportName
 		) {
-			applyAppearance(report, appearance);
+			applyAppearance(frappe.query_report, appearance);
 		}
 	}
 
@@ -540,7 +582,7 @@
 		if (
 			!reportName ||
 			!isCurrentReportRoute(reportName) ||
-			report._rsaSummaryReportName !== reportName ||
+			!supportsAppearance(report) ||
 			!canSetAppearance()
 		) {
 			return;

@@ -1,13 +1,17 @@
-#page-query-report .title-text .rsa-report-title-icon {
+#page-query-report .title-area .rsa-report-title-icon {
 	height: 18px;
 	margin: 0 7px 0 0;
+	color: inherit;
 	vertical-align: -3px;
 	width: 18px;
-	--icon-fill: currentColor;
+	--icon-fill: transparent;
 	--icon-stroke: currentColor;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary {
+.report-summary.rsa-report-summary-active {
+	--rsa-summary-icon-color: var(--text-color);
+	--rsa-summary-icon-background: var(--blue-50, var(--control-bg));
+
 	align-items: stretch;
 	background: transparent;
 	border: 0;
@@ -18,7 +22,12 @@
 	padding: 12px 0;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .summary-item {
+[data-theme="dark"] .report-summary.rsa-report-summary-active {
+	--rsa-summary-icon-color: var(--text-color);
+	--rsa-summary-icon-background: var(--control-bg, var(--bg-color));
+}
+
+.report-summary.rsa-report-summary-active .summary-item {
 	align-items: center;
 	background: var(--card-bg, var(--bg-color));
 	border: 0;
@@ -42,26 +51,26 @@
 		transform 140ms ease;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .summary-item:hover {
+.report-summary.rsa-report-summary-active .summary-item:hover {
 	box-shadow: 0 7px 20px rgb(15 23 42 / 10%);
 	transform: translateY(-2px);
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .rsa-summary-card-icon {
-	background: var(--control-bg, var(--bg-color));
+.report-summary.rsa-report-summary-active .rsa-summary-card-icon {
+	background: var(--rsa-summary-icon-background, var(--control-bg, var(--bg-color)));
 	border-radius: 999px;
 	box-sizing: content-box;
-	color: var(--primary);
+	color: var(--rsa-summary-icon-color, var(--text-color));
 	flex: 0 0 auto;
 	height: 15px;
 	margin: 0;
 	padding: 10px;
 	width: 15px;
-	--icon-fill: currentColor;
+	--icon-fill: transparent;
 	--icon-stroke: currentColor;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .rsa-card-content {
+.report-summary.rsa-report-summary-active .rsa-card-content {
 	align-items: flex-start;
 	display: flex;
 	flex: 1 1 auto;
@@ -71,7 +80,7 @@
 	text-align: left;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .summary-label {
+.report-summary.rsa-report-summary-active .summary-label {
 	color: var(--text-muted);
 	font-size: 11px;
 	font-weight: 600;
@@ -84,7 +93,7 @@
 	width: 100%;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .summary-value {
+.report-summary.rsa-report-summary-active .summary-value {
 	font-size: 21px;
 	font-weight: 650;
 	line-height: 1.25;
@@ -94,12 +103,12 @@
 	width: 100%;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .summary-value div {
+.report-summary.rsa-report-summary-active .summary-value div {
 	text-align: left;
 	white-space: normal;
 }
 
-#page-query-report.rsa-report-appearance-active .report-summary .rsa-summary-description {
+.report-summary.rsa-report-summary-active .rsa-summary-description {
 	color: var(--text-muted);
 	font-size: 12px;
 	line-height: 1.45;

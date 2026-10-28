@@ -62,6 +62,12 @@
  "permissions": [
   {
    "create": 1,
+   "read": 1,
+   "role": "Report Styler",
+   "write": 1
+  },
+  {
+   "create": 1,
    "delete": 1,
    "read": 1,
    "role": "System Manager",
