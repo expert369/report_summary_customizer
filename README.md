@@ -32,6 +32,12 @@ If installing from a local checkout, use `bench get-app` with the repository URL
 
 The app changes presentation only; it does not create reports, change report queries, or generate summary values. Summary card labels are matched as displayed, so labels that differ by translation or report filters need corresponding settings.
 
+Default Appearance
+<img width="1581" height="820" alt="image" src="https://github.com/user-attachments/assets/2b4dd4d2-6f68-4784-a655-914f7f1aab3b" />
+
+After applying Appearance
+<img width="1596" height="720" alt="image" src="https://github.com/user-attachments/assets/5e941031-5e06-4d32-9152-9c7fe6633573" />
+
 ## How it works
 
 1. `hooks.py` includes the app's CSS and JavaScript in the Frappe Desk. The assets listen for Desk route changes and act only on the `query-report` route.
