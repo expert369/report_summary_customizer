@@ -1,7 +1,7 @@
 app_name = "report_summary_customizer"
 app_title = "Report Summary Customizer"
 app_publisher = "erp.kokosolutions@gmail.com"
-app_description = "Report Enhancer is a custom Frappe application that enhances the appearance of ERPNext Script Reports by allowing authorized users to customize report titles, icons, and summary card styling directly from the report view."
+app_description = "Customize report titles, summary cards, and descriptions in Frappe reports."
 app_email = "erp.kokosolutions@gmail.com"
 app_license = "mit"
 
@@ -25,8 +25,8 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/report_summary_customizer/css/report_summary_customizer.css"
-# app_include_js = "/assets/report_summary_customizer/js/report_summary_customizer.js"
+app_include_css = ["/assets/report_summary_customizer/css/report_appearance.css"]
+app_include_js = ["/assets/report_summary_customizer/js/report_appearance.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/report_summary_customizer/css/report_summary_customizer.css"
@@ -88,8 +88,8 @@ app_license = "mit"
 # Uninstallation
 # ------------
 
-# before_uninstall = "report_summary_customizer.uninstall.before_uninstall"
-# after_uninstall = "report_summary_customizer.uninstall.after_uninstall"
+before_uninstall = "report_summary_customizer.uninstall.before_uninstall"
+after_uninstall = "report_summary_customizer.uninstall.after_uninstall"
 
 # Integration Setup
 # ------------------
@@ -246,4 +246,11 @@ app_license = "mit"
 # ------------
 # List of apps whose translatable strings should be excluded from this app's translations.
 # ignore_translatable_strings_from = []
+
+fixtures = [
+	{
+		"dt": "Role",
+		"filters": [["name", "=", "Report Styler"]],
+	}
+]
 

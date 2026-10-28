@@ -3,7 +3,7 @@ name = "report_summary_customizer"
 authors = [
     { name = "erp.kokosolutions@gmail.com", email = "erp.kokosolutions@gmail.com"}
 ]
-description = "Report Enhancer is a custom Frappe application that enhances the appearance of ERPNext Script Reports by allowing authorized users to customize report titles, icons, and summary card styling directly from the report view."
+description = "Customize report titles, summary cards, and descriptions in Frappe reports."
 requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]

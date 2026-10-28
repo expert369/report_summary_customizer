@@ -1,0 +1,112 @@
+#page-query-report .title-text .qgc-report-title-icon {
+	height: 18px;
+	margin: 0 7px 0 0;
+	vertical-align: -3px;
+	width: 18px;
+	--icon-fill: currentColor;
+	--icon-stroke: currentColor;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary {
+	align-items: stretch;
+	background: transparent;
+	border: 0;
+	display: grid;
+	gap: 14px;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 225px), 1fr));
+	margin: 1rem;
+	padding: 12px 0;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .summary-item {
+	align-items: center;
+	background: var(--card-bg, var(--bg-color));
+	border: 0;
+	border-left: 3px solid var(--qgc-card-border, var(--border-color));
+	border-radius: 12px;
+	box-shadow: 0 3px 12px rgb(15 23 42 / 6%);
+	box-sizing: border-box;
+	display: flex;
+	flex-direction: row;
+	gap: 14px;
+	height: auto;
+	justify-content: flex-start;
+	margin: 0;
+	max-width: none;
+	min-height: 92px;
+	min-width: 0;
+	padding: 16px 18px;
+	text-align: left;
+	transition:
+		box-shadow 140ms ease,
+		transform 140ms ease;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .summary-item:hover {
+	box-shadow: 0 7px 20px rgb(15 23 42 / 10%);
+	transform: translateY(-2px);
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .qgc-summary-card-icon {
+	background: var(--control-bg, var(--bg-color));
+	border-radius: 999px;
+	box-sizing: content-box;
+	color: var(--primary);
+	flex: 0 0 auto;
+	height: 15px;
+	margin: 0;
+	padding: 10px;
+	width: 15px;
+	--icon-fill: currentColor;
+	--icon-stroke: currentColor;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .qgc-card-content {
+	align-items: flex-start;
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	text-align: left;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .summary-label {
+	color: var(--text-muted);
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 0.045em;
+	line-height: 1.35;
+	text-align: left;
+	text-overflow: ellipsis;
+	text-transform: uppercase;
+	white-space: normal;
+	width: 100%;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .summary-value {
+	font-size: 21px;
+	font-weight: 650;
+	line-height: 1.25;
+	padding: 0;
+	text-align: left;
+	white-space: normal;
+	width: 100%;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .summary-value div {
+	text-align: left;
+	white-space: normal;
+}
+
+#page-query-report.qgc-report-appearance-active .report-summary .qgc-summary-description {
+	color: var(--text-muted);
+	font-size: 12px;
+	line-height: 1.45;
+	margin-top: 2px;
+	text-align: left;
+}
+
+.qgc-menu-hidden {
+	display: none !important;
+}
