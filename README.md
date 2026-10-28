@@ -20,7 +20,7 @@ Restart the Bench's web and worker processes using the process manager for that 
 
 ## Features
 
-- Set a report title icon (Frappe icon or sanitized inline SVG) and title color.
+- Set a report title icon (Frappe icon or sanitized inline SVG) and title color. Note: recommended to use [lucide.dev](https://lucide.dev/icons/) svgs icons.
 - Match summary card settings by the displayed card label; set an icon, border color, and description for each matching card.
 - Edit settings from a **Set Appearance** menu item on a supported report page. The item is available to users with the `Report Styler` or `System Manager` role.
 - Save appearance per report and apply updates to the current page without reloading it.
