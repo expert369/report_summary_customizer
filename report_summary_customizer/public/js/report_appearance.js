@@ -22,8 +22,10 @@
 		activePage: "qgc-report-appearance-active",
 	});
 
-	const GET_APPEARANCE_METHOD = "report_summary_customizer.api.report_appearance.get_report_appearance";
-	const SET_APPEARANCE_METHOD = "report_summary_customizer.api.report_appearance.set_report_appearance";
+	const GET_APPEARANCE_METHOD =
+		"report_summary_customizer.api.report_appearance.get_report_appearance";
+	const SET_APPEARANCE_METHOD =
+		"report_summary_customizer.api.report_appearance.set_report_appearance";
 	const appearanceCache = new Map();
 	const pendingAppearanceRequests = new Map();
 	let routeGeneration = 0;
@@ -59,9 +61,9 @@
 
 		summary.querySelectorAll(SELECTORS.summaryCard).forEach((card) => {
 			card.querySelectorAll(SELECTORS.cardIcon).forEach((icon) => icon.remove());
-			card
-				.querySelectorAll(SELECTORS.cardDescription)
-				.forEach((description) => description.remove());
+			card.querySelectorAll(SELECTORS.cardDescription).forEach((description) =>
+				description.remove()
+			);
 			card.classList.remove(CLASSES.styledCard);
 			card.style.removeProperty("--qgc-card-border");
 
@@ -386,7 +388,9 @@
 			if (frappe.query_report !== report || !isCurrentReportRoute(reportName)) return;
 
 			const displayedCards = readDisplayedCardLabels(report);
-			const savedCards = new Map((appearance.cards || []).map((card) => [card.card_label, card]));
+			const savedCards = new Map(
+				(appearance.cards || []).map((card) => [card.card_label, card])
+			);
 			const fields = [
 				{
 					fieldtype: "Section Break",
@@ -473,11 +477,17 @@
 							const updatedAppearance = response.message || {};
 							appearanceCache.set(reportName, updatedAppearance);
 							const activeReport = frappe.query_report;
-							if (activeReport?.report_name === reportName && isCurrentReportRoute(reportName)) {
+							if (
+								activeReport?.report_name === reportName &&
+								isCurrentReportRoute(reportName)
+							) {
 								applyAppearance(activeReport, updatedAppearance);
 							}
 							dialog.hide();
-							frappe.show_alert({ message: __("Report appearance saved"), indicator: "green" });
+							frappe.show_alert({
+								message: __("Report appearance saved"),
+								indicator: "green",
+							});
 						});
 				},
 			});

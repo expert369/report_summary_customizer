@@ -253,4 +253,3 @@ fixtures = [
 		"filters": [["name", "=", "Report Styler"]],
 	}
 ]
-

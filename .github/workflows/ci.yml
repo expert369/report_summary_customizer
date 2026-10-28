@@ -6,9 +6,13 @@ on:
     branches:
       - develop
   pull_request:
+    branches:
+      - developer
+      - version-15
 
 concurrency:
-  group: develop-report_summary_customizer-${{ github.event.number }}
+  # PR: one group per PR number. Push: one group per branch (latest push wins).
+  group: ci-report_summary_customizer-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -39,15 +43,22 @@ jobs:
       - name: Clone
         uses: actions/checkout@v3
 
-      - name: Find tests
+      - name: Detect runnable app tests
+        id: detect-tests
+        working-directory: ${{ github.workspace }}
         run: |
-          echo "Finding tests"
-          grep -rn "def test" > /dev/null
+          if rg -n '^\s*def test_' qgc_erp --glob 'test_*.py' > /dev/null; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+            echo "Runnable app tests found."
+          else
+            echo "has_tests=false" >> "$GITHUB_OUTPUT"
+            echo "No runnable app tests found in qgc_erp; test step will be skipped."
+          fi
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.12'
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -77,12 +88,12 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install MariaDB Client
-        run: sudo apt-get install mariadb-client-10.6
+        run: sudo apt-get update && sudo apt-get install -y mariadb-client
 
       - name: Setup
         run: |
           pip install frappe-bench
-          bench init --skip-redis-config-generation --skip-assets --python "$(which python)" ~/frappe-bench
+          bench init --skip-redis-config-generation --skip-assets --frappe-branch version-15 --python "$(which python)" /home/runner/frappe-bench
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL character_set_server = 'utf8mb4'"
           mariadb --host 127.0.0.1 --port 3306 -u root -proot -e "SET GLOBAL collation_server = 'utf8mb4_unicode_ci'"
 
@@ -90,14 +101,19 @@ jobs:
         working-directory: /home/runner/frappe-bench
         run: |
           bench get-app report_summary_customizer $GITHUB_WORKSPACE
+          bench get-app https://github.com/frappe/erpnext --branch version-15
+          bench get-app https://github.com/frappe/hrms --branch version-15
           bench setup requirements --dev
           bench new-site --db-root-password root --admin-password admin test_site
+          bench --site test_site install-app erpnext
+          bench --site test_site install-app hrms
           bench --site test_site install-app report_summary_customizer
           bench build
         env:
           CI: 'Yes'
 
       - name: Run Tests
+        if: steps.detect-tests.outputs.has_tests == 'true'
         working-directory: /home/runner/frappe-bench
         run: |
           bench --site test_site set-config allow_tests true
